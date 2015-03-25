@@ -1,0 +1,10 @@
+[
+    { "caption": "Logging: Reset logging system", "command": "logging_reset" },
+    { "caption": "Logging: Toggle logging", "command": "logging_toggle" },
+    { "caption": "Logging: Enable logging", "command": "logging_toggle", "args": {"enable": true} },
+    { "caption": "Logging: Disable logging", "command": "logging_toggle", "args": {"enable": false} },
+    { "caption": "Logging: Level = DEBUG", "command": "logging_set_level", "args": {"level": "DEBUG"} },
+    { "caption": "Logging: Level = INFO", "command": "logging_set_level", "args": {"level": "INFO"} },
+    { "caption": "Logging: Level = WARNING", "command": "logging_set_level", "args": {"level": "WARNING"} },
+    { "caption": "Logging: Level = FATAL", "command": "logging_set_level", "args": {"level": "FATAL"} },
+]
