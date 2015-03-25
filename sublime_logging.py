@@ -228,8 +228,8 @@ class LoggingToggleCommand(sublime_plugin.WindowCommand):
         else:
             # Uh, how? Probably just increase the root logger's level to sufficiently high number.
             level = 50
+            logger.info("Setting logging level to %s", level)
             logging.root.level = level
-            logger.info("Logging level set to %s", level)
             sublime.status_message("Logging Turned Off (entirely)")
 
         settings.set('logging_is_enabled', enable)
