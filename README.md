@@ -48,7 +48,7 @@ the user likes to see what is going on all the time).
 
 Logging Control is also not intended to control logging of *user input*.
 User-invoked commands and key-presses can be controlled with the [Verbose](https://packagecontrol.io/packages/Verbose)
-plugin, or switched on/off directly through the log_* API methods.
+plugin, or switched on/off directly through the ```log_*``` API methods.
 
 
 
@@ -56,21 +56,21 @@ plugin, or switched on/off directly through the log_* API methods.
 ## Configuration
 Settings keys and default values - overview:
 ```
-"logging_root_level": "DEBUG",
+"logging_root_level": "INFO",
 "logging_persist_changes": false,
 "logging_enable_on_startup": true,
-"logging_use_basicConfig": true,
+"logging_use_basicConfig": false,
 "logging_console_enabled": true,
 "logging_console_fmt": "%(asctime)s %(levelname)-5s %(name)20s:%(lineno)-4s%(funcName)20s() %(message)s",
 "logging_console_datefmt": "%H:%M:%S",
-"logging_console_level": "INFO",
+"logging_console_level": "DEBUG",
 "logging_file_enabled": false,
 "logging_file_fmt": "%(asctime)s %(levelname)-6s - %(name)s:%(lineno)s - %(funcName)s() - %(message)s",
 "logging_file_datefmt": "%Y%m%d-%H:%M:%S",
 "logging_file_level": "DEBUG",
 "logging_file_path": "sublime_output.log",
 "logging_file_rotating": true,
-"logging_file_clear_on_reset": false,
+"logging_file_clear_on_reset": false
 ```
 
 Controlling output:
@@ -99,27 +99,31 @@ Controlling what logging types are printed (what level):
 "logging_console_level": "WARNING",     # Only print warning log messages in the console.
 "logging_file_level": "DEBUG"           # But write DEBUG messages to the log file.
 ```
-*Note:* Using different levels for console and file output is only supported with logging_use_basicConfig set to false.
-Also, if logging_root_level is set to "INFO", only "INFO" messages are printed, even if logging_file_level is set to "DEBUG".
+*Note:* Using different levels for console and file output is only supported with ```logging_use_basicConfig``` set to false.
+Also, if ```logging_root_level``` is set to "INFO", only "INFO" messages are printed, even if ```logging_file_level``` is set to "DEBUG".
 
 
 You can open the user-editable settings file with:
+```
     Preferences -> Package Settings -> Logging Control -> Settings - User
+```
 
 ## Usage
 Press ctrl+shift+p and start typing "Logging". Select the command you wish to invoke.
-* "Logging: Disable logging" -will disable logging (by setting logging_root_level to a very high level).
-* "Logging: Enable logging" - will enable logging, initializing the logging system if it hasn't already been initialized.
-* "Logging: Toggle logging" - will toggle logging on/off.
-* "Logging: Level = %LEVEL%" - will set logging_root_level to %LEVEL%.
-* "Logging: Reset logging system" - will reset the logging system (in case something has gone wrong).
+* ```"Logging: Disable logging"``` - will disable logging (by setting logging_root_level to a very high level).
+* ```"Logging: Enable logging"``` - will enable logging, initializing the logging system if it hasn't already been initialized.
+* ```"Logging: Toggle logging"``` - will toggle logging on/off.
+* ```"Logging: Level = %LEVEL%"``` - will set logging_root_level to %LEVEL%.
+* ```"Logging: Reset logging system"``` - will reset the logging system (in case something has gone wrong).
 
 
 ## Key binding
 Key bindings can be used to create keyboard shortcuts for your favorite commands.
-Open Default (Platform).sublime-keymap, which can be opened with either of:
+Open ```Default (Platform).sublime-keymap```, which can be opened with either of:
+```
     Preferences -> Package Settings -> Logging Control -> Key Bindings--User
     Preferences -> Key Bindings--User
+```
 
 Then edit the file to look similar to the following:
 ```
@@ -129,5 +133,5 @@ Then edit the file to look similar to the following:
 ]
 ```
 
-The commands list can be found in the logging_control.sublime-commands (next to the default
-Sublime_logging.sublime-settings file.)
+The commands list can be found in the ```logging_control.sublime-commands``` (next to the default
+```logging_control.sublime-settings``` file.)
