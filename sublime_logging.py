@@ -34,6 +34,7 @@ Settings:
 
 
 """
+from __future__ import print_function
 
 # import fails because no sublime_api available.
 import sublime          # pylint: disable=F0401
