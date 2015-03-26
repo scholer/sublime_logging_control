@@ -50,7 +50,6 @@ SETTINGS_NAME = "logging_control.sublime-settings"
 
 
 
-
 def plugin_loaded():
     """
     For Sublime Text 3:
@@ -67,6 +66,16 @@ def plugin_loaded():
         print("Logging system not enabled on startup; to display logging messages, start logging manually...")
 
 
+def get_loglevel(which="root"):
+    return logging.getLogger(which).level
+
+def get_level_name(level=None):
+    if level is None:
+        level = logging.root.level
+    if isinstance(level, int):
+        return logging.getLevelName(level)
+    else:
+        return level
 
 def ensure_loglevel_int(level):
     """
@@ -77,7 +86,6 @@ def ensure_loglevel_int(level):
     if isinstance(level, int):
         return level
     return getattr(logging, level.upper())
-
 
 def set_loglevel(level):
     """
@@ -93,9 +101,13 @@ def reset_logging_system(settings=None):
     Resets logging systems.
     """
 
-    logger.info("Resetting logging system...")
     if settings is None:
         settings = sublime.load_settings(SETTINGS_NAME)
+    if settings.get("logging_persist_changes", False) and not settings.get('logging_is_enabled', False):
+        print("NOT activating logging system because persist_changes is specified and logging has been disabled.")
+        return
+    logger.info("Resetting logging system...")
+
     # These SHOULD be available in the default logging_control.sublime-settings file, but still...
     defaults = {'logging_root_level': 'DEBUG',
                 'logging_console_enabled': True,
@@ -222,9 +234,15 @@ class LoggingToggleCommand(sublime_plugin.WindowCommand):
         """
         settings = sublime.load_settings(SETTINGS_NAME)
         level = logging.root.level
-        print('settings.has("logging_enable_on_startup"):', settings.has("logging_enable_on_startup"))
         if enable is None:
             enable = not settings.get('logging_is_enabled', True)
+
+        # Set setting before doing, since logging_reset queries these:
+        settings.set('logging_is_enabled', enable)
+        if settings.get("logging_persist_changes", False):
+            sublime.save_settings(SETTINGS_NAME)
+            logger.info("Persisting settings with logging_root_level = %s and logging_is_enabled = %s",
+                        level, enable)
 
         if enable:
             if logging.root.handlers:
@@ -235,9 +253,7 @@ class LoggingToggleCommand(sublime_plugin.WindowCommand):
             else:
                 # Set up logging: (will run after this command has completed...)
                 self.window.run_command("logging_reset")
-            sublime.status_message("Logging Turned On (level=%s)" %
-                                   logging.getLevelName(level) if isinstance(level, int)
-                                   else level)
+            sublime.status_message("Logging Turned On (level=%s)" % get_level_name())
         else:
             # Uh, how? Probably just increase the root logger's level to sufficiently high number.
             level = 50
@@ -245,7 +261,6 @@ class LoggingToggleCommand(sublime_plugin.WindowCommand):
             logging.root.setLevel(ensure_loglevel_int(level))
             sublime.status_message("Logging Turned Off (entirely)")
 
-        settings.set('logging_is_enabled', enable)
 
 
 class LoggingSetLevelCommand(sublime_plugin.WindowCommand):
@@ -261,6 +276,12 @@ class LoggingSetLevelCommand(sublime_plugin.WindowCommand):
         sublime.status_message("Logging level set to %s" % level)
         print("Logging level set to %s" % level)
         logger.info("Logging level set to %s", level)
+
+        settings = sublime.load_settings(SETTINGS_NAME)
+        if settings.get("logging_persist_changes", False):
+            settings.set("logging_root_level", level)
+            sublime.save_settings(SETTINGS_NAME)
+            logger.info("Persisting settings with logging_root_level = %s", level)
 
 
 
