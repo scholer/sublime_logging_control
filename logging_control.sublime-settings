@@ -3,7 +3,7 @@
     "logging_root_level": "DEBUG",
     "logging_persist_changes": false,
     "logging_enable_on_startup": true,
-    "logging_use_basicConfig": true,
+    "logging_use_basicConfig": false,
     "logging_console_enabled": true,
     "logging_console_fmt": "%(asctime)s %(levelname)-5s %(name)20s:%(lineno)-4s%(funcName)20s() %(message)s",
     "logging_console_datefmt": "%H:%M:%S",
@@ -14,5 +14,5 @@
     "logging_file_level": "DEBUG",
     "logging_file_path": "sublime_output.log",
     "logging_file_rotating": true,
-    "logging_file_clear_on_reset": false,
+    "logging_file_clear_on_reset": false
 }

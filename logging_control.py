@@ -47,12 +47,13 @@ import logging.handlers
 logger = logging.getLogger(__name__)
 
 SETTINGS_NAME = "logging_control.sublime-settings"
-#on_modified_field = "auto_save_on_modified"
-#delay_field = "auto_save_delay_in_seconds"
+
+
 
 
 def plugin_loaded():
     """
+    For Sublime Text 3:
     At importing time, plugins may not call any API functions, with the exception of
     sublime.version(), sublime.platform(), sublime.architecture() and sublime.channel().
 
@@ -61,38 +62,36 @@ def plugin_loaded():
     just before the plugin is unloaded.
     """
     if sublime.load_settings(SETTINGS_NAME).get("logging_enable_on_startup"):
-        # load_settings doesn't seem to work??
-        print("Invoking logging_reset ") #command...")
-        #sublime.run_command("logging_reset")  # Commands doesn't work on start-up (at least not yet).
         reset_logging_system()
     else:
-        print("Logging system not enabled on startup...")
-        print("SETTINGS_NAME:", SETTINGS_NAME)
-        settings = sublime.load_settings(SETTINGS_NAME)
-        print('settings.has("logging_enable_on_startup"):', settings.has("logging_enable_on_startup"))
-        print("Invoking logging_set_level command")
-        sublime.run_command("logging_set_level", args={'level': 'DEBUG'})
-        print("After")
+        print("Logging system not enabled on startup; to display logging messages, start logging manually...")
 
+
+
+def ensure_loglevel_int(level):
+    """
+    Ensure that level is an appropriate logging level.
+    This is only required for python 2.6 and below;
+    2.7 and above handles strings and yields ValueErrors when appropriate.
+    """
+    if isinstance(level, int):
+        return level
+    return getattr(logging, level.upper())
 
 
 def set_loglevel(level):
     """
     Set level of logging's root logger.
-    level can be an integer or any of '
     """
-    #if isinstance(level, str):
-    #    level = getattr(logging, level.upper())
-    ## Make sure we have an integer:
-    #level = int(level)
-    ## set root logger's level:
-    #logging.getLogger().level = level
-
-    # Edit: Just use logger.setLevel()
+    # Note: Setting level with a string (e.g. "INFO") does not work for python 2.6!
+    # For python 2.6, use getattr(logging, level.upper()) to convert str level to int.
     logging.root.setLevel(level)
 
 
 def reset_logging_system(settings=None):
+    """
+    Resets logging systems.
+    """
 
     logger.info("Resetting logging system...")
     if settings is None:
@@ -169,7 +168,7 @@ def reset_logging_system(settings=None):
         # Create new logging handlers for the root logger:
         for output in ('console', 'file'):
             # Create partial/closure. Usage as cfg('enabled') --> returns logging_console_enabled settings value.
-            cfg = partial(get_config, cfgkeyfmt="logging_%s_{}" % output)
+            cfg = partial(get_config, cfgkeyfmt="logging_%s_{0}" % output)
             if not cfg('enabled'):
                 continue
             if output == 'console':
@@ -191,12 +190,21 @@ def reset_logging_system(settings=None):
             # If the call's level is >= the handler's level, it is emitted.
             # Typically, the level is adjusted in the logger, and the handler's level is set to 0.
             if cfg('level'):
-                handler.setLevel(cfg('level'))
+                handler.setLevel(ensure_loglevel_int(cfg('level')))
             logging.root.addHandler(handler)
 
         # Set root logger's level:
-        logging.root.setLevel(settings.get('logging_root_level', defaults['logging_root_level']))
-        logger.info("Logging system has been reset.")
+        rootlevel = get_config('level', 'logging_root_{0}')
+        consolelevel = get_config('level', 'logging_console_{0}') if get_config('enabled', 'logging_console_{0}') \
+                       else "DISABLED"
+        if not get_config('enabled', 'logging_file_{0}'):
+            filelevel = "is DISABLED"
+        else:
+            filelevel = get_config('path', 'logging_file_{0}') + " with level " + get_config('level', 'logging_file_{0}')
+
+        logging.root.setLevel(ensure_loglevel_int(rootlevel))
+        logger.info("Logging system has been reset; root level is %s; console level is %s; logging to file %s",
+                    rootlevel, consolelevel, filelevel)
 
 
 
@@ -213,6 +221,7 @@ class LoggingToggleCommand(sublime_plugin.WindowCommand):
             None - toggle logging
         """
         settings = sublime.load_settings(SETTINGS_NAME)
+        level = logging.root.level
         print('settings.has("logging_enable_on_startup"):', settings.has("logging_enable_on_startup"))
         if enable is None:
             enable = not settings.get('logging_is_enabled', True)
@@ -221,7 +230,7 @@ class LoggingToggleCommand(sublime_plugin.WindowCommand):
             if logging.root.handlers:
                 # We already have loggers defined:
                 level = settings.get('logging_root_level', logging.DEBUG)
-                logging.root.setLevel(level)
+                logging.root.setLevel(ensure_loglevel_int(level))
                 logger.info("Logging level set to %s", level)
             else:
                 # Set up logging: (will run after this command has completed...)
@@ -233,7 +242,7 @@ class LoggingToggleCommand(sublime_plugin.WindowCommand):
             # Uh, how? Probably just increase the root logger's level to sufficiently high number.
             level = 50
             logger.info("Setting logging level to %s", level)
-            logging.root.level = level
+            logging.root.setLevel(ensure_loglevel_int(level))
             sublime.status_message("Logging Turned Off (entirely)")
 
         settings.set('logging_is_enabled', enable)
@@ -248,7 +257,7 @@ class LoggingSetLevelCommand(sublime_plugin.WindowCommand):
         """
         Set logging level.
         """
-        logging.root.setLevel(level)
+        logging.root.setLevel(ensure_loglevel_int(level))
         sublime.status_message("Logging level set to %s" % level)
         print("Logging level set to %s" % level)
         logger.info("Logging level set to %s", level)
@@ -269,3 +278,8 @@ class LoggingResetCommand(sublime_plugin.WindowCommand):
         """
         reset_logging_system()
         sublime.status_message("Logging system has been reset.")
+
+
+if int(sublime.version()) < 3000:
+    # plugin_loaded() is not called automatically for ST 2.
+    plugin_loaded()

@@ -6,5 +6,5 @@
     { "caption": "Logging: Level = DEBUG", "command": "logging_set_level", "args": {"level": "DEBUG"} },
     { "caption": "Logging: Level = INFO", "command": "logging_set_level", "args": {"level": "INFO"} },
     { "caption": "Logging: Level = WARNING", "command": "logging_set_level", "args": {"level": "WARNING"} },
-    { "caption": "Logging: Level = FATAL", "command": "logging_set_level", "args": {"level": "FATAL"} },
+    { "caption": "Logging: Level = FATAL", "command": "logging_set_level", "args": {"level": "FATAL"} }
 ]
