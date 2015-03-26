@@ -144,6 +144,9 @@ def reset_logging_system(settings=None):
         filepath = (settings.get("logging_file_enabled") and settings.get("logging_file_path")) or None
         if filepath:
             print("Logging output to file:", filepath)
+        if logging.root.handlers:
+            print("NOTE: logging system already initialized. This command will not have any effect!")
+            print("(set logging_use_basicConfig: false if you want this plugin to seize control of logging output configuration)")
         logging.basicConfig(level=settings.get('logging_root_level'),
                             format=settings.get('logging_console_fmt'),
                             datefmt=settings.get('logging_console_datefmt'),
