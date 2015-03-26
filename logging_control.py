@@ -25,7 +25,7 @@ Usage:
 * (b) Bind your favorite commands to keystrokes.
 
 Configuration:
-* Logging behaviour can be adjusted in the sublime_logging.sublime-settings file.
+* Logging behaviour can be adjusted in the logging_control.sublime-settings file.
 
 Settings:
 * logging_{console/file}_fmt is used to alter how logging messages are displayed in console / log files.
@@ -46,7 +46,7 @@ import logging
 import logging.handlers
 logger = logging.getLogger(__name__)
 
-SETTINGS_NAME = "sublime_logging.sublime-settings"
+SETTINGS_NAME = "logging_control.sublime-settings"
 #on_modified_field = "auto_save_on_modified"
 #delay_field = "auto_save_delay_in_seconds"
 
@@ -97,7 +97,7 @@ def reset_logging_system(settings=None):
     logger.info("Resetting logging system...")
     if settings is None:
         settings = sublime.load_settings(SETTINGS_NAME)
-    # These SHOULD be available in the default sublime_logging.sublime-settings file, but still...
+    # These SHOULD be available in the default logging_control.sublime-settings file, but still...
     defaults = {'logging_root_level': 'DEBUG',
                 'logging_console_enabled': True,
                 'logging_console_fmt': "%(asctime)s %(levelname)-5s %(name)20s:%(lineno)-4s%(funcName)20s() %(message)s",

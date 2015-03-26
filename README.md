@@ -1,4 +1,4 @@
-# sublime logging: Logging plugin for Sublime Text
+# Logging Control: Logging plugin for Sublime Text
 This plugin for Sublime Text provides user-facing commands to enable and adjust
 logging output using python's native logging module. Logging only works for
 plugins that already uses the standard logging module.
@@ -38,15 +38,15 @@ flooding the user's console.
 ## What this plugin is not
 This plugin is not intended to grab *all* console output and save it to a file.
 That functionality is provided by e.g. the [SublimeLog](https://packagecontrol.io/packages/SublimeLog) plugin.
-*The difference:* sublime_logging focuses exclusively on logging messages via the standard python logging library.
-Using the logging library, the developers does not have to worry about whether producing a debug/info message
-will flood the user's console. The developer can produce as many logging messages as might be needed,
-but reserve use of print() to when
+*The difference:* Logging Control focuses exclusively on logging messages via the standard python logging library.
+Using the logging library developers does not have to worry about whether producing a debug/info message
+will flood the user's console. The developer can produce as many logging messages as he/she thinks is needed,
+but reserve use of print() to when the developer actually wants to display a message to the user's console.
 The user can choose to direct all logging messages to a file, keeping the console output clean.
 The user can also choose to output logging messages to the console on a as-needed basis (or permanently, if
 the user likes to see what is going on all the time).
 
-Sublime_logging is also not intended to control logging of user input.
+Logging Control is also not intended to control logging of *user input*.
 User-invoked commands and key-presses can be controlled with the [Verbose](https://packagecontrol.io/packages/Verbose)
 plugin, or switched on/off directly through the log_* API methods.
 
@@ -104,7 +104,7 @@ Also, if logging_root_level is set to "INFO", only "INFO" messages are printed, 
 
 
 You can open the user-editable settings file with:
-    Preferences -> Package Settings -> Sublime Logging -> Settings - User
+    Preferences -> Package Settings -> Logging Control -> Settings - User
 
 ## Usage
 Press ctrl+shift+p and start typing "Logging". Select the command you wish to invoke.
@@ -118,7 +118,7 @@ Press ctrl+shift+p and start typing "Logging". Select the command you wish to in
 ## Key binding
 Key bindings can be used to create keyboard shortcuts for your favorite commands.
 Open Default (Platform).sublime-keymap, which can be opened with either of:
-    Preferences -> Package Settings -> Sublime Logging -> Key Bindings--User
+    Preferences -> Package Settings -> Logging Control -> Key Bindings--User
     Preferences -> Key Bindings--User
 
 Then edit the file to look similar to the following:
@@ -129,5 +129,5 @@ Then edit the file to look similar to the following:
 ]
 ```
 
-The commands list can be found in the Sublime_logging.sublime-commands (next to the default
+The commands list can be found in the logging_control.sublime-commands (next to the default
 Sublime_logging.sublime-settings file.)
