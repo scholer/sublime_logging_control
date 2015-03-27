@@ -1,0 +1,28 @@
+
+ Thank you for installing Logging Control
+===========================================
+
+You can now control the behavior of logging output.
+
+Logging Control only works for plugins that already uses the
+standard logging module. Using the standard logging module is
+a best practice, but unfortunately not always used. If you want
+to display logging output for a plug-in that does not use the
+standard logging library, consider writing the author of the plug-in
+and ask him/her to implement logging using the standard logging
+library. Or, if you have the ability to do so, fork the plug-in
+implement the desired logging behaviour, and send the author a
+pull request.
+
+To find and invoke the logging control commands, use ctrl+shift+p
+(cmd+shift+p on OS X). Start typing "logging" and you should see a
+list of logging control commands displayed.
+
+You can configure Logging Control in it's settings:
+    Preferences -> Package Settings -> Logging Control -> Settings - User
+    Preferences -> Package Settings -> Logging Control -> Settings - Default
+
+You can copy the default settings to the user settings file to get started.
+
+For more info on how to use this plugin, please see the README file,
+or visit https://github.com/scholer/sublime_logging_control
