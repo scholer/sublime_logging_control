@@ -48,6 +48,20 @@ logger = logging.getLogger(__name__)
 
 SETTINGS_NAME = "logging_control.sublime-settings"
 
+defaults = {'logging_root_level': 'DEBUG',
+            'logging_console_enabled': True,
+            'logging_console_fmt': "%(asctime)s %(levelname)-5s %(name)20s:%(lineno)-4s%(funcName)20s() %(message)s",
+            'logging_console_datefmt': "%H:%M:%S",
+            'logging_console_level': 'INFO',
+            'logging_file_enabled': False,
+            'logging_file_fmt': "%(asctime)s %(levelname)-6s - %(name)s:%(lineno)s - %(funcName)s() - %(message)s",
+            'logging_file_datefmt': "%Y%m%d-%H:%M:%S",
+            'logging_file_level': 'DEBUG',
+            'logging_file_path': 'sublime_output.log',
+            'logging_file_rotating': True, # True will use RotatingFileHandler, otherwise FileHandler
+            'logging_file_clear_on_reset': True,
+           }
+
 
 
 def plugin_loaded():
@@ -95,6 +109,46 @@ def set_loglevel(level):
     # For python 2.6, use getattr(logging, level.upper()) to convert str level to int.
     logging.root.setLevel(level)
 
+def get_default_log_dir():
+    """
+    :return: A suitable default directory to put logfile in.
+    """
+    # os.getcwd() is usually Sublime Text base installation path. This may not be readable.
+    packages_dir = sublime.packages_path()
+    # Use <sublime-text data dir>/logs/ as default directory for file logs.
+    logfiledir = os.path.join(os.path.abspath(os.path.dirname(packages_dir)), 'logs')
+    return logfiledir
+
+def check_logfilepath(logfilepath):
+    """
+    :param logfilepath: A logfile name or path. If this is not absolute, a suitable directory will be prepended.
+    :return: a valid, absolute file path to use as logfile path.
+    """
+    logfiledir = os.path.dirname(logfilepath)
+    if not logfiledir:
+        logfiledir = get_default_log_dir()
+        logfilepath = os.path.join(logfiledir, logfilepath)
+    if not os.path.exists(logfiledir):
+        print("Making log directory:", logfiledir)
+        os.mkdir(logfiledir)
+    return logfilepath
+
+def get_config(key, cfgkeyfmt, default=None):
+    """
+    Used to make it easier to get settings keys with long names,
+    resorting to defaults for default values.
+    E.g.
+    >>> get_config(enabled, "logging_console_{}")
+    # Will look for logging_console_enabled in settings and then defaults.
+    True
+    This function can be used together with functools.partial to make it even shorter
+    by fixing the cfgkeyfmt argument. See usage below.
+    """
+    settings = sublime.load_settings(SETTINGS_NAME)
+    settings_key = cfgkeyfmt.format(key)
+    return settings.get(settings_key,
+                        defaults.get(settings_key, default))
+
 
 def reset_logging_system(settings=None):
     """
@@ -109,48 +163,6 @@ def reset_logging_system(settings=None):
     logger.info("Resetting logging system...")
 
     # These SHOULD be available in the default logging_control.sublime-settings file, but still...
-    defaults = {'logging_root_level': 'DEBUG',
-                'logging_console_enabled': True,
-                'logging_console_fmt': "%(asctime)s %(levelname)-5s %(name)20s:%(lineno)-4s%(funcName)20s() %(message)s",
-                'logging_console_datefmt': "%H:%M:%S",
-                'logging_console_level': 'INFO',
-                'logging_file_enabled': False,
-                'logging_file_fmt': "%(asctime)s %(levelname)-6s - %(name)s:%(lineno)s - %(funcName)s() - %(message)s",
-                'logging_file_datefmt': "%Y%m%d-%H:%M:%S",
-                'logging_file_level': 'DEBUG',
-                'logging_file_path': 'sublime_output.log',
-                'logging_file_rotating': True, # True will use RotatingFileHandler, otherwise FileHandler
-                'logging_file_clear_on_reset': True,
-               }
-    def check_logfilepath(logfilepath):
-        'logging_file_path'
-        logfiledir = os.path.dirname(logfilepath)
-        if not logfiledir:
-            # os.getcwd() is usually Sublime Text base installation path. This may not be readable.
-            packages_dir = sublime.packages_path()
-            # Use <sublime-text data dir>/logs/ as default directory for file logs.
-            logfiledir = os.path.join(os.path.abspath(os.path.dirname(packages_dir)), 'logs')
-            logfilepath = os.path.join(logfiledir, logfilepath)
-        if not os.path.exists(logfiledir):
-            print("Making log directory:", logfiledir)
-            os.mkdir(logfiledir)
-        return logfilepath
-
-    def get_config(key, cfgkeyfmt, default=None):
-        """
-        Used to make it easier to get settings keys with long names,
-        resorting to defaults for default values.
-        E.g.
-        >>> get_config(enabled, "logging_console_{}")
-        # Will look for logging_console_enabled in settings and then defaults.
-        True
-        This function can be used together with functools.partial to make it even shorter
-        by fixing the cfgkeyfmt argument. See usage below.
-        """
-        settings_key = cfgkeyfmt.format(key)
-        return settings.get(settings_key,
-                            defaults.get(settings_key, default))
-
     if settings.get("logging_use_basicConfig"):
         print("Initializing logging system using basicConfig...")
         filepath = (settings.get("logging_file_enabled") and settings.get("logging_file_path")) or None
@@ -188,11 +200,16 @@ def reset_logging_system(settings=None):
             else:
                 logfilepath = cfg('path')
                 logfilepath = check_logfilepath(logfilepath)
+                filehandler_kwargs = settings.get("logging_file_handler_kwargs")
                 if cfg('rotating'):
                     # Use rotating file handler with 3 logfiles each maxing out / rotating at 2 MB:
-                    handler = logging.handlers.RotatingFileHandler(logfilepath, maxBytes=2*2**20, backupCount=3)
+                    if filehandler_kwargs is None:
+                        filehandler_kwargs = dict(maxBytes=2*2**20, backupCount=3)
+                    handler = logging.handlers.RotatingFileHandler(logfilepath, **filehandler_kwargs)
                 else:
-                    handler = logging.FileHandler(logfilepath)
+                    if filehandler_kwargs is None:
+                        filehandler_kwargs = dict()
+                    handler = logging.FileHandler(logfilepath, **filehandler_kwargs)
             formatter = logging.Formatter(fmt=cfg('fmt'), datefmt=cfg('datefmt'))
             handler.setFormatter(formatter)
             # There are two places where the 'level' is evaluated:
@@ -219,6 +236,37 @@ def reset_logging_system(settings=None):
                     rootlevel, consolelevel, filelevel)
 
 
+class LoggingShowDefaultLogFileCommand(sublime_plugin.WindowCommand):
+    """
+    command key: logging_show_default_log_file
+    Will open the default log file.
+    """
+
+    def run(self):
+        """
+        Will open the default log file.
+        """
+        settings = sublime.load_settings(SETTINGS_NAME)
+        logging_file_path = settings.get("logging_file_path") or None
+        logging_is_enabled = settings.get("logging_is_enabled")
+        logging_file_enabled= settings.get("logging_file_enabled")
+
+        if not logging_file_path:
+            print("sublime_logging_control: logging_file_path is set to", logging_file_path, "; cannot open filepath.")
+            return
+
+        logging_file_path = check_logfilepath(logging_file_path)
+
+        print("Opening default log file:", logging_file_path)
+        sublime.active_window().open_file(logging_file_path)
+
+        if not logging_file_enabled:
+            print(" - Note: logging to file is currently DISABLED (logging_file_enabled=%s)." % logging_file_enabled)
+        if not logging_is_enabled:
+            print(" - note: logging in general is currently DISABLED (logging_is_enabled=%s)." % logging_is_enabled)
+
+
+
 
 class LoggingToggleCommand(sublime_plugin.WindowCommand):
     """
@@ -233,6 +281,7 @@ class LoggingToggleCommand(sublime_plugin.WindowCommand):
             None - toggle logging
         """
         settings = sublime.load_settings(SETTINGS_NAME)
+
         level = logging.root.level
         if enable is None:
             enable = not settings.get('logging_is_enabled', True)

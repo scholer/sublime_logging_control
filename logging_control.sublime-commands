@@ -1,5 +1,6 @@
 [
     { "caption": "Logging: Reset logging system", "command": "logging_reset" },
+    { "caption": "Logging: Open log file", "command": "logging_show_default_log_file" },
     { "caption": "Logging: Toggle logging", "command": "logging_toggle" },
     { "caption": "Logging: Enable logging", "command": "logging_toggle", "args": {"enable": true} },
     { "caption": "Logging: Disable logging", "command": "logging_toggle", "args": {"enable": false} },
