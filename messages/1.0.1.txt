@@ -1,0 +1,6 @@
+Logging Control v1.0.1:
+-----------------------
+Important changes:
+* Renamed `rotating` settings parameter to `logging_file_rotating`, and `path` to `logging_file_path`.
+  All `logging` settings now starts with `logging_`.
+  Please verify that settings parameter names matches those found in the logging_control.sublime-settings file.

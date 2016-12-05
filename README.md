@@ -4,9 +4,11 @@ logging output using python's native logging module. Logging only works for
 plugins that already uses the standard logging module.
 
 This plugin enables the user to customize:
+
 * How to display logging messages
 * Whether to save save logging messages to a file
 * What types of logging messages (the severity level) are displayed/written to file (DEBUG/INFO/WARNING/FATAL messages).
+
 The user can adjust the logging level on-the-fly using ctrl+shift+p and selecting the desired level.
 
 
@@ -55,6 +57,7 @@ plugin, or switched on/off directly through the ```log_*``` API methods.
 
 ## Configuration
 Settings keys and default values - overview:
+
 ```
 "logging_root_level": "INFO",
 "logging_persist_changes": false,
@@ -73,24 +76,28 @@ Settings keys and default values - overview:
 "logging_file_clear_on_reset": false
 ```
 
-Controlling output:
+Parameters controlling output:
+
 * ```logging_console_enabled``` and ```logging_file_enabled``` controls whether logging messages are written to the console and/or file respectively.
 * ```logging_console/file_fmt``` setting controls how logging messages are formatted for console and file output respectively.
 * ```logging_console/file_datefmt``` setting controls how the timestamps are formatted for console and file output respectively.
 * ```logging_file_path``` is used to specify the file to write logging messages to, if logging_file_enabled is set to true.
-* ```logging_file_rotating``` can be set to true in order to use a "rotating" log-file scheme.
+* ```logging_file_rotating``` can be set to true in order to use a "rotating" log-file scheme. When the log file exceeds 20 MB it is renamed to `<logfilename>.log.1` and a new logfile is created (creating up to 3 old log files). See [Python – Logging module – RotatingFileHandler](https://docs.python.org/3/library/logging.handlers.html#logging.handlers.RotatingFileHandler) for more details. 
 
-Controlling behaviour:
+Parameters controlling behaviour:
+
 * ```logging_persist_changes```: If the user sets logging level (to DEBUG/INFO/etc), remember this level after exit.
 * ```logging_enable_on_startup```: Enable logging when the
 * ```logging_use_basicConfig```: can be used to ensure that the plugin will not re-set the logging system if the logging system has been initialized by other packages.
 
-Controlling what logging types are printed (what level):
+Parameters controlling what logging types are printed (what level):
+
 * ```logging_root_level``` controls the lowest severity that is ever considered.
 * ```logging_console_level``` can be increased to only print messages with at least this level to the console.
 * ```logging_file_level``` can be increased to only print messages with at least this level to the log file.
 
 *Example:* You want to print ALL debug messages to a log file, but only show the most severe messages in the console:
+
 ```
 "logging_use_basicConfig": false,
 "logging_console_enabled": true,
@@ -99,6 +106,7 @@ Controlling what logging types are printed (what level):
 "logging_console_level": "WARNING",     # Only print warning log messages in the console.
 "logging_file_level": "DEBUG"           # But write DEBUG messages to the log file.
 ```
+
 *Note:* Using different levels for console and file output is only supported with ```logging_use_basicConfig``` set to false.
 Also, if ```logging_root_level``` is set to "INFO", only "INFO" messages are printed, even if ```logging_file_level``` is set to "DEBUG".
 
@@ -110,6 +118,7 @@ You can open the user-editable settings file with:
 
 ## Usage
 Press ctrl+shift+p and start typing "Logging". Select the command you wish to invoke.
+
 * ```"Logging: Disable logging"``` - will disable logging (by setting logging_root_level to a very high level).
 * ```"Logging: Enable logging"``` - will enable logging, initializing the logging system if it hasn't already been initialized.
 * ```"Logging: Toggle logging"``` - will toggle logging on/off.
@@ -120,12 +129,14 @@ Press ctrl+shift+p and start typing "Logging". Select the command you wish to in
 ## Key binding
 Key bindings can be used to create keyboard shortcuts for your favorite commands.
 Open ```Default (Platform).sublime-keymap```, which can be opened with either of:
+
 ```
     Preferences -> Package Settings -> Logging Control -> Key Bindings--User
     Preferences -> Key Bindings--User
 ```
 
 Then edit the file to look similar to the following:
+
 ```
 [
     { "keys": ["ctrl+alt+shift+t"], "command": "logging_toggle" },
@@ -135,3 +146,16 @@ Then edit the file to look similar to the following:
 
 The commands list can be found in the ```logging_control.sublime-commands``` (next to the default
 ```logging_control.sublime-settings``` file.)
+
+
+## Developer notes
+
+To create a new release with Package Control:
+
+1. Create a text file under `messages/` describing the release and update `messages.json` accordingly. 
+2. Tag the current revision as a more recent release with a higher semantic version, and push tag (and revisions) to github:
+
+```
+git tag -a 1.2.3 -m "Release 1.2.3"
+git push origin --tags
+```

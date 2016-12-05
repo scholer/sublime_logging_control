@@ -198,10 +198,10 @@ def reset_logging_system(settings=None):
             if output == 'console':
                 handler = logging.StreamHandler()
             else:
-                logfilepath = cfg('path')
+                logfilepath = settings.get("logging_file_path")
                 logfilepath = check_logfilepath(logfilepath)
                 filehandler_kwargs = settings.get("logging_file_handler_kwargs")
-                if cfg('rotating'):
+                if settings.get("logging_file_rotating"):
                     # Use rotating file handler with 3 logfiles each maxing out / rotating at 2 MB:
                     if filehandler_kwargs is None:
                         filehandler_kwargs = dict(maxBytes=2*2**20, backupCount=3)
