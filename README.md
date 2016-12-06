@@ -32,26 +32,54 @@ using python's logging library could be an appropriate way to output log message
 I developed this plugin because I wanted to debug the behaviour of the [auto-save](https://packagecontrol.io/packages/auto-save) plugin.
 I was having issues with dropbox conflicts when a file in my dropbox was opened in Sublime Text on two different computers,
 both instances having auto-save turned on.
-I wanted the plugin to *temporarily* print a (time-stamped) message whenever the auto-save plugin would save the file.
-However, I didn't want to modify the plugin to *always* print this message - that would produce way too many messages,
-flooding the user's console.
+I wanted the plugin to *temporarily* print a time-stamped message whenever the auto-save plugin was saving the file.
+However, I didn't want to modify the plugin to *always* print this message - that 
+would produce way too many messages, flooding the user's console.
+
+This package has since evolved to be a more general-purpose logging-control package.
+In addition to allowing you to toggle logging on/off and setting the logging level 
+(for the root logger), it provides several convenient ways to configure
+Python's standard logging system and initialize it for use when Sublime Text is launched.
 
 
 ## What this plugin is not
+
 This plugin is not intended to grab *all* console output and save it to a file.
 That functionality is provided by e.g. the [SublimeLog](https://packagecontrol.io/packages/SublimeLog) plugin.
-*The difference:* Logging Control focuses exclusively on logging messages via the **standard python logging library**.
-Using the logging library, library developers does not have to worry about whether producing a debug/info message
+
+*The difference* is that this package, **Logging Control**, focuses exclusively 
+on logging messages via the **standard python logging library**.
+Whereas e.g. SublimeLog is used to redirect messages printed to `stdout/stderr` to a file instead of the console.
+
+Using a proper logging system (like the one provided by Python's standard library)
+provides many advantages compared to just printing error messages using `print()`.
+Using Python's standard logging library, library developers does not have to worry about whether producing a debug/info message
 will flood the user's console. The developer can produce as many logging messages as he/she thinks is needed,
 but reserve use of print() to when the developer actually wants to display a message to the user's console.
 The library user (application developer) can choose to direct all logging messages to a file, keeping the console output clean.
 The library user can also choose to output logging messages to the console on a as-needed basis (or permanently, if
 the user likes to see what is going on all the time).
 
-Logging Control is also not intended to control logging of *user input*.
+This plugin, Logging Control, is also not intended to control logging of *user input*.
 User-invoked commands and key-presses can be controlled with the [Verbose](https://packagecontrol.io/packages/Verbose)
-plugin, or switched on/off directly through the ```log_*``` API methods.
+plugin, or switched on/off directly through Sublime Text's ```log_*``` API methods.
 
+
+
+## Usage
+
+The primary purpose of this package is to configure and initialize Python's standard logging system,
+allowing the user easy access to customize the logging system. 
+Configuring the logging system is described in the "Configuration" section below.
+
+However, this package does provide a few convenient commands to adjust logging dynamically:
+Press ctrl+shift+p and start typing "Logging". Select the command you wish to invoke.
+
+* ```"Logging: Disable logging"``` - will disable logging (by setting logging_root_level to a very high level).
+* ```"Logging: Enable logging"``` - will enable logging, initializing the logging system if it hasn't already been initialized.
+* ```"Logging: Toggle logging"``` - will toggle logging on/off.
+* ```"Logging: Level = %LEVEL%"``` - will set logging_root_level to %LEVEL%.
+* ```"Logging: Reset logging system"``` - will reset the logging system (in case something has gone wrong).
 
 
 
@@ -183,10 +211,8 @@ Example config for the second solution using a filter and multiple handlers:
   "handlers": {
     "custom_tofile": {
       "class": "logging.FileHandler",
-      "filters": [
-        "allow_foopack"
-      ],
-      "stream": "~/custom_log_output_temp.log",
+      "filters": ["allow_foopack"],
+      "filename": "custom_log_output_temp.log",
       "formatter": "fulldate",
       "level": "DEBUG"
     },
@@ -198,20 +224,14 @@ Example config for the second solution using a filter and multiple handlers:
     },
     "custom_console": {
       "class": "logging.StreamHandler",
-      "filters": [
-        "allow_foopack"
-      ],
+      "filters": ["allow_foopack"],
       "stream": "ext://sys.stdout",
       "formatter": "standard",
       "level": "DEBUG"
     }
   },
   "root": {
-    "handlers": [
-      "std_console",
-      "custom_console",
-      "custom_tofile"
-    ],
+    "handlers": ["std_console", "custom_console", "custom_tofile"],
     "level": "DEBUG"
   }
 }
@@ -228,17 +248,8 @@ more info on how to set up a customized logging system using dict-config.
 
 
 
-## Usage
-Press ctrl+shift+p and start typing "Logging". Select the command you wish to invoke.
-
-* ```"Logging: Disable logging"``` - will disable logging (by setting logging_root_level to a very high level).
-* ```"Logging: Enable logging"``` - will enable logging, initializing the logging system if it hasn't already been initialized.
-* ```"Logging: Toggle logging"``` - will toggle logging on/off.
-* ```"Logging: Level = %LEVEL%"``` - will set logging_root_level to %LEVEL%.
-* ```"Logging: Reset logging system"``` - will reset the logging system (in case something has gone wrong).
-
-
 ## Key binding
+
 Key bindings can be used to create keyboard shortcuts for your favorite commands.
 Open ```Default (Platform).sublime-keymap```, which can be opened with either of:
 
