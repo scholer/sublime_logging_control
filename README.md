@@ -40,12 +40,12 @@ flooding the user's console.
 ## What this plugin is not
 This plugin is not intended to grab *all* console output and save it to a file.
 That functionality is provided by e.g. the [SublimeLog](https://packagecontrol.io/packages/SublimeLog) plugin.
-*The difference:* Logging Control focuses exclusively on logging messages via the standard python logging library.
-Using the logging library developers does not have to worry about whether producing a debug/info message
+*The difference:* Logging Control focuses exclusively on logging messages via the **standard python logging library**.
+Using the logging library, library developers does not have to worry about whether producing a debug/info message
 will flood the user's console. The developer can produce as many logging messages as he/she thinks is needed,
 but reserve use of print() to when the developer actually wants to display a message to the user's console.
-The user can choose to direct all logging messages to a file, keeping the console output clean.
-The user can also choose to output logging messages to the console on a as-needed basis (or permanently, if
+The library user (application developer) can choose to direct all logging messages to a file, keeping the console output clean.
+The library user can also choose to output logging messages to the console on a as-needed basis (or permanently, if
 the user likes to see what is going on all the time).
 
 Logging Control is also not intended to control logging of *user input*.
@@ -56,9 +56,20 @@ plugin, or switched on/off directly through the ```log_*``` API methods.
 
 
 ## Configuration
+
+Note: *Logging Control* is, as the name indicates, simply a package to control the behaviour of the standard python logging library. 
+I highly recommend looking at the [Logging – HOWTO](https://docs.python.org/3/howto/logging.html) 
+and the [Logging module](https://docs.python.org/3/library/logging.handlers.html) documentation.
+These docs will give a good impression of how *Logging Control* works, 
+and what *Logging Control* can and cannot do.
+
+For information on how to create and use the "advanced, dict-based" logging behaviour using a custom logging configuration file, 
+please see the [Python - Logging - Config](https://docs.python.org/3/library/logging.config.html) documentation.
+
+
 Settings keys and default values - overview:
 
-```
+```JSON
 "logging_root_level": "INFO",
 "logging_persist_changes": false,
 "logging_enable_on_startup": true,
@@ -74,6 +85,8 @@ Settings keys and default values - overview:
 "logging_file_path": "sublime_output.log",
 "logging_file_rotating": true,
 "logging_file_clear_on_reset": false
+"logging_config_dict_file": null,
+"logging_config_dict": null
 ```
 
 Parameters controlling output:
@@ -96,7 +109,22 @@ Parameters controlling what logging types are printed (what level):
 * ```logging_console_level``` can be increased to only print messages with at least this level to the console.
 * ```logging_file_level``` can be increased to only print messages with at least this level to the log file.
 
-*Example:* You want to print ALL debug messages to a log file, but only show the most severe messages in the console:
+Parameters to use the advanced dict-based logging configuration:
+
+* ```logging_config_dict_file``` - a file path to either a .json or .yaml file describing the advanced, dictConfig-based setup. See the [Python - Logging - Config](https://docs.python.org/3/library/logging.config.html) documentation.
+* ```logging_config_dict``` - Also for advanced dictConfig-based setup, but instead of having the configuration dict in a separate .json file, you just include the dict to configure the logging system inside the `logging_control.sublime-settings` file.  
+
+
+*Hint:* You can open the user-editable settings file with:
+
+```
+    Preferences -> Package Settings -> Logging Control -> Settings - User
+```
+
+
+### Examples:
+
+*Example 1:* You want to print ALL debug messages to a log file, but only show the most severe messages in the console:
 
 ```
 "logging_use_basicConfig": false,
@@ -111,10 +139,94 @@ Parameters controlling what logging types are printed (what level):
 Also, if ```logging_root_level``` is set to "INFO", only "INFO" messages are printed, even if ```logging_file_level``` is set to "DEBUG".
 
 
-You can open the user-editable settings file with:
+**Advanced example using dictConfig configuration:**
+
+Scenario: You are having problems with a particular package, `foopack` and want to print all debug and info log messages,
+but you don't want to flood your console or logging files with debug logging messages from other packages.
+There are several ways of configuring your logging system to accommodate this,
+the only requirement being that `foopack` is actually using Python's standard logging system:
+
+1. You can configure the `logger` that foopack uses to issue its logging messages. 
+Typically, libraries will use loggers with a name matching the package module from which the log message was created,
+that is, it will have  `logger = logging.getLogger(__name__)`. 
+For instance, you can configure `foopack` logger to `level=DEBUG` 
+and attach a separate handler that prints log messages to the console or a separate file.
+This method is mostly suitable if you are familiar with how `foopack` works,
+and you are only interested in `foopack`.
+2. You can configure a filter that only allows log messages from `foopack` to pass through, 
+and attach the filter to a handler on the root logger.
+
+Example config for the second solution using a filter and multiple handlers:
+
+```JSON
+"logging_config_dict": {
+  "version": 1,
+  "filters": {
+    "allow_foopack": {
+      "name": "foopack"
+    }
+  },
+  "formatters": {
+    "detailed": {
+      "format": "%(asctime)s %(levelname)-5s %(name)20s:%(lineno)-4s%(funcName)20s() %(message)s",
+      "datefmt": "%Y%m%d-%H:%M:%S"
+    },
+    "fulldate": {
+      "format": "%(asctime)s %(levelname)-5s %(name)s:%(lineno)-4s %(message)s",
+      "datefmt": "%Y%m%d-%H:%M:%S"
+    },
+    "standard": {
+      "format": "%(asctime)s %(levelname)-8s %(name)-15s %(message)s",
+      "datefmt": "%H:%M:%S"
+    }
+  },
+  "handlers": {
+    "custom_tofile": {
+      "class": "logging.FileHandler",
+      "filters": [
+        "allow_foopack"
+      ],
+      "stream": "~/custom_log_output_temp.log",
+      "formatter": "fulldate",
+      "level": "DEBUG"
+    },
+    "std_console": {
+      "class": "logging.StreamHandler",
+      "formatter": "standard",
+      "stream": "ext://sys.stdout",
+      "level": "WARNING"
+    },
+    "custom_console": {
+      "class": "logging.StreamHandler",
+      "filters": [
+        "allow_foopack"
+      ],
+      "stream": "ext://sys.stdout",
+      "formatter": "standard",
+      "level": "DEBUG"
+    }
+  },
+  "root": {
+    "handlers": [
+      "std_console",
+      "custom_console",
+      "custom_tofile"
+    ],
+    "level": "DEBUG"
+  }
+}
 ```
-    Preferences -> Package Settings -> Logging Control -> Settings - User
-```
+
+As you can see, the configuration dict quickly becomes rather unwieldy.
+It may be more convenient to specify the logging configuration in a separate file,
+using a more readable format such as YAML. 
+You can use the `logging_config_dict_file` keyword to specify such an external file. 
+(Must be either YAML or JSON format).
+
+See the `dictconfig_example.yaml` file in the root directory of this package for 
+more info on how to set up a customized logging system using dict-config. 
+
+
 
 ## Usage
 Press ctrl+shift+p and start typing "Logging". Select the command you wish to invoke.
@@ -137,7 +249,7 @@ Open ```Default (Platform).sublime-keymap```, which can be opened with either of
 
 Then edit the file to look similar to the following:
 
-```
+```JSON
 [
     { "keys": ["ctrl+alt+shift+t"], "command": "logging_toggle" },
     { "keys": ["ctrl+alt+shift+e"], "command": "logging_toggle", "args": {"enable": false} },

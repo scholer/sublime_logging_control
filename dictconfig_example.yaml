@@ -1,0 +1,87 @@
+# From https://docs.python.org/3/library/logging.config.html
+# and https://docs.python.org/3/howto/logging.html#configuring-logging
+
+# The logging system consists of four components:
+# 1. Loggers.
+# 2. Log record handlers - specifies what to do with a log record.
+# 3. Log record filters - specifies which log records are actually displayed.
+# 4. Log record formatters - specifies how a log record looks when it is is displayed.
+# See https://docs.python.org/3/howto/logging.html#logging-flow for a informative diagram of the logging workflow.
+
+# Loggers are hierarchical, the hierarchy specified by period-separated names:
+# The logger `foo.bar.baz` has ancestors root <- foo <- foo.bar <- foo.bar.baz.
+# If `propagate` is True, then (after passing LogRecords to all the logger's handlers)
+# the LogRecord is passed to the logger's parent.
+
+# More examples on how to configure logging using dictConfig files:
+# * https://docs.python.org/3/howto/logging.html#configuring-logging
+# * https://gist.github.com/cshoe/2777755
+#
+
+# dictConfig files must have a 'version' entry which must equal 1.
+version: 1
+
+formatters:
+  brief:
+    # configuration for formatter with id 'brief' goes here
+    format: '%(message)s'
+  precise:
+    # configuration for formatter with id 'precise' goes here
+    format: '%(asctime)s %(levelname)-8s %(name)-15s %(message)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'
+  simple:
+    format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+filters:
+  # Define logging filters, c.f. https://docs.python.org/3/library/logging.html#filter-objects
+  # "A filter initialized with 'A.B' will allow events logged by loggers 'A.B', 'A.B.C', 'A.B.C.D', 'A.B.D' etc.,
+  # but not 'A.BB', 'B.A.B' etc. If initialized with the empty string, all events are passed."
+  # Filters can be attached to loggers as well as handlers.
+  allow_foo:  # filter id
+    # Only allow log records issued by a logger with name "foo".
+    # Although loggers can be arbitrarily named, it is customary for libraries to use loggers with names
+    # matching the module name, i.e. `logger = logging.getLogger(__name__)`. Thus, this logger
+    # would only include log records for package `foo`, including all of `foo`'s sub-modules.
+    name: "foo"
+  allow_logging_control:
+    name: "logging_control"
+handlers:
+  # 'class' must be specified for all handlers.
+  h1: # This is an id
+    # configuration of handler with id 'h1' goes here:
+    formatter: brief
+    class: logging.StreamHandler
+    stream: ext://sys.stdout
+  h2: # This is another id
+    # configuration of handler with id 'h2' goes here:
+    formatter: precise
+    class: logging.StreamHandler
+  console:
+    # This handler will print logging records to stdout (using the "brief" formatter):
+    class: logging.StreamHandler
+    formatter: brief
+    level: DEBUG
+    filters: [allow_foo, allow_logging_control]  # Messages has to pass ALL filters to be emitted.
+    stream: ext://sys.stdout
+  file:
+    # This handler will print logging records to a file, rotating the file if it is larger than 1024 bytes:
+    class: logging.handlers.RotatingFileHandler
+    formatter: precise
+    filename: logconfig_example_test.log
+    maxBytes: 1024
+    backupCount: 3
+loggers:
+  # Set up loggers with specific names (typically corresponding to a particular module or package):
+  foo.bar.baz:
+    # other configuration for logger 'foo.bar.baz'
+    handlers: [h1, h2]
+    propagate: false  # Do not propagate log records to foo.bar or any other ancestor.
+  simpleExample:
+    level: DEBUG
+    handlers: [console]
+    propagate: no
+root:
+  # Configure the root logger:
+  handlers: [file, console]
+  level: INFO
+
+

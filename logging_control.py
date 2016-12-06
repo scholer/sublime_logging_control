@@ -42,26 +42,30 @@ import sublime_plugin   # pylint: disable=F0401
 
 import os
 from functools import partial
+import json
 import logging
+import logging.config
 import logging.handlers
 logger = logging.getLogger(__name__)
 
 SETTINGS_NAME = "logging_control.sublime-settings"
 
-defaults = {'logging_root_level': 'DEBUG',
-            'logging_console_enabled': True,
-            'logging_console_fmt': "%(asctime)s %(levelname)-5s %(name)20s:%(lineno)-4s%(funcName)20s() %(message)s",
-            'logging_console_datefmt': "%H:%M:%S",
-            'logging_console_level': 'INFO',
-            'logging_file_enabled': False,
-            'logging_file_fmt': "%(asctime)s %(levelname)-6s - %(name)s:%(lineno)s - %(funcName)s() - %(message)s",
-            'logging_file_datefmt': "%Y%m%d-%H:%M:%S",
-            'logging_file_level': 'DEBUG',
-            'logging_file_path': 'sublime_output.log',
-            'logging_file_rotating': True, # True will use RotatingFileHandler, otherwise FileHandler
-            'logging_file_clear_on_reset': True,
-           }
-
+defaults = {
+    'logging_root_level': 'DEBUG',
+    'logging_console_enabled': True,
+    'logging_console_fmt': "%(asctime)s %(levelname)-5s %(name)20s:%(lineno)-4s%(funcName)20s() %(message)s",
+    'logging_console_datefmt': "%H:%M:%S",
+    'logging_console_level': 'INFO',
+    'logging_file_enabled': False,
+    'logging_file_fmt': "%(asctime)s %(levelname)-6s - %(name)s:%(lineno)s - %(funcName)s() - %(message)s",
+    'logging_file_datefmt': "%Y%m%d-%H:%M:%S",
+    'logging_file_level': 'DEBUG',
+    'logging_file_path': 'sublime_output.log',
+    'logging_file_rotating': True,  # True will use RotatingFileHandler, otherwise FileHandler
+    'logging_file_clear_on_reset': True,
+    'logging_config_dict_file': None,  # Use logging.config.dictConfig() to configure logging.
+    'logging_config_dict': None
+}
 
 
 def plugin_loaded():
@@ -83,6 +87,7 @@ def plugin_loaded():
 def get_loglevel(which="root"):
     return logging.getLogger(which).level
 
+
 def get_level_name(level=None):
     if level is None:
         level = logging.root.level
@@ -90,6 +95,7 @@ def get_level_name(level=None):
         return logging.getLevelName(level)
     else:
         return level
+
 
 def ensure_loglevel_int(level):
     """
@@ -101,6 +107,7 @@ def ensure_loglevel_int(level):
         return level
     return getattr(logging, level.upper())
 
+
 def set_loglevel(level):
     """
     Set level of logging's root logger.
@@ -108,6 +115,7 @@ def set_loglevel(level):
     # Note: Setting level with a string (e.g. "INFO") does not work for python 2.6!
     # For python 2.6, use getattr(logging, level.upper()) to convert str level to int.
     logging.root.setLevel(level)
+
 
 def get_default_log_dir():
     """
@@ -118,6 +126,7 @@ def get_default_log_dir():
     # Use <sublime-text data dir>/logs/ as default directory for file logs.
     logfiledir = os.path.join(os.path.abspath(os.path.dirname(packages_dir)), 'logs')
     return logfiledir
+
 
 def check_logfilepath(logfilepath):
     """
@@ -132,6 +141,7 @@ def check_logfilepath(logfilepath):
         print("Making log directory:", logfiledir)
         os.mkdir(logfiledir)
     return logfilepath
+
 
 def get_config(key, cfgkeyfmt, default=None):
     """
@@ -169,14 +179,34 @@ def reset_logging_system(settings=None):
         if filepath:
             print("Logging output to file:", filepath)
         if logging.root.handlers:
-            print("NOTE: logging system already initialized. This command will not have any effect!")
-            print("(set logging_use_basicConfig: false if you want this plugin to seize control of logging output configuration)")
+            print("NOTE: logging system already initialized. This command will not have any effect!"
+                  "(set ```logging_use_basicConfig: false``` if you want this plugin to seize control"
+                  "of logging output configuration).")
         logging.basicConfig(level=settings.get('logging_root_level'),
                             format=settings.get('logging_console_fmt'),
                             datefmt=settings.get('logging_console_datefmt'),
                             filename=filepath)
         logger.info("Logging system has been started using basicConfig.")
-
+    elif settings.get("logging_config_dict_file") or settings.get("logging_config_dict"):
+        if settings.get("logging_config_dict_file"):
+            dictconfig_fn = settings.get("logging_config_dict_file")
+            fnbase, fnext = os.path.splitext(dictconfig_fn)
+            if fnext.lower() == ".yaml":
+                print("Configuring logging system using dict config from yaml-formatted file:", dictconfig_fn)
+                import yaml
+                with open(dictconfig_fn) as fp:
+                    dictconfig = yaml.load(fp)
+            else:
+                print("Configuring logging system using dict config from json-formatted file:", dictconfig_fn)
+                with open(dictconfig_fn) as fp:
+                    dictconfig = json.load(fp)
+        else:
+            print("Configuring logging system using dict from logging_control settings file")
+            dictconfig = settings.get("logging_config_dict")
+        logging.config.dictConfig(dictconfig)
+        print(" - dictConfig logging setup complete. "
+              "Note: Re-setting logging system is not supported for custom/dict-based setup; "
+              "If you change the logging configuration, you must restart Sublime Text for changes to take effect.")
     else:
         # Reset logging handlers:
         # Note: This only affects the root logger.
@@ -266,8 +296,6 @@ class LoggingShowDefaultLogFileCommand(sublime_plugin.WindowCommand):
             print(" - note: logging in general is currently DISABLED (logging_is_enabled=%s)." % logging_is_enabled)
 
 
-
-
 class LoggingToggleCommand(sublime_plugin.WindowCommand):
     """
     command key: logging_toggle
@@ -311,13 +339,12 @@ class LoggingToggleCommand(sublime_plugin.WindowCommand):
             sublime.status_message("Logging Turned Off (entirely)")
 
 
-
 class LoggingSetLevelCommand(sublime_plugin.WindowCommand):
     """
     command key: logging_set_level
     """
 
-    def run(self, level):
+    def run(self, level=20):
         """
         Set logging level.
         """
@@ -331,7 +358,6 @@ class LoggingSetLevelCommand(sublime_plugin.WindowCommand):
             settings.set("logging_root_level", level)
             sublime.save_settings(SETTINGS_NAME)
             logger.info("Persisting settings with logging_root_level = %s", level)
-
 
 
 class LoggingResetCommand(sublime_plugin.WindowCommand):

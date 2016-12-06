@@ -1,0 +1,6 @@
+Logging Control v1.0.2:
+-----------------------
+New features:
+* Added support for custom dict-based logging configuration using either `logging_config_dict` keyword
+  (to configure the logging system within the logging_control.sublime-settings file),
+  or `logging_config_dict_file` to use an external dict file in either JSON or YAML format.

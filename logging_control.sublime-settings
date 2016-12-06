@@ -14,5 +14,7 @@
     "logging_file_level": "DEBUG",
     "logging_file_path": "sublime_output.log",
     "logging_file_rotating": true,
-    "logging_file_clear_on_reset": false
+    "logging_file_clear_on_reset": false,
+    "logging_config_dict_file": null,
+    "logging_config_dict": null
 }
